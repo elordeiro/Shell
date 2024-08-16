@@ -18,25 +18,33 @@ func main() {
 		fmt.Fprint(os.Stdout, "$ ")
 
 		scanner.Scan()
-		line := strings.Split(strings.TrimSpace(scanner.Text()), " ")
-		cmd := line[0]
+		line := scanner.Text()
+		lineSplit := strings.Split(strings.TrimSpace(line), " ")
+		cmd := lineSplit[0]
 
 		switch cmd {
 		case "echo":
-			echo(line[1:])
+			echo(line)
 		case "exit":
-			code := atoi(line[1])
-			os.Exit(code)
+			exit(line)
 		default:
 			fmt.Printf("%s: command not found\n", cmd)
 		}
 	}
 }
 
-func echo(strs []string) {
-	for _, str := range strs {
-		fmt.Print(str)
+func exit(line string) {
+	line = strings.TrimSpace(strings.TrimPrefix(line, "exit"))
+	if line == "" {
+		os.Exit(0)
 	}
+	code := atoi(line)
+	os.Exit(code)
+}
+
+func echo(line string) {
+	line = strings.TrimPrefix(line, "echo ")
+	fmt.Println(line)
 }
 
 func atoi(a string) int {
