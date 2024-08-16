@@ -22,12 +22,20 @@ func main() {
 		cmd := line[0]
 
 		switch cmd {
+		case "echo":
+			echo(line[1:])
 		case "exit":
 			code := atoi(line[1])
 			os.Exit(code)
 		default:
 			fmt.Printf("%s: command not found\n", cmd)
 		}
+	}
+}
+
+func echo(strs []string) {
+	for _, str := range strs {
+		fmt.Print(str)
 	}
 }
 
