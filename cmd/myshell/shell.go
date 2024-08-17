@@ -15,15 +15,17 @@ type Shell struct {
 	path     []string
 	builtins []string
 	scanner  *bufio.Scanner
+	pwd      string
 	// status   int
 }
 
 func NewShell() *Shell {
-	shell := &Shell{scanner: bufio.NewScanner(os.Stdin)}
-
-	path := os.Getenv("PATH")
-	shell.path = append(shell.path, strings.Split(string(path), ":")...)
-	shell.builtins = append(shell.path, "echo", "exit", "type")
+	shell := &Shell{
+		path:     append([]string{}, strings.Split(os.Getenv("PATH"), ":")...),
+		builtins: append([]string{}, "echo", "exit", "pwd", "type"),
+		scanner:  bufio.NewScanner(os.Stdin),
+		pwd:      os.Getenv("PWD"),
+	}
 
 	return shell
 }
@@ -42,6 +44,8 @@ func (s *Shell) run() {
 			s.echo(line)
 		case "exit":
 			s.exit(line)
+		case "pwd":
+			s.pwdCmd()
 		case "type":
 			s.typeCmd(line)
 		default:
@@ -70,6 +74,10 @@ func (s *Shell) echo(line string) {
 	}
 	line = strings.TrimPrefix(line, "echo ")
 	fmt.Println(line)
+}
+
+func (s *Shell) pwdCmd() {
+	fmt.Println(s.pwd)
 }
 
 func (s *Shell) typeCmd(line string) {
