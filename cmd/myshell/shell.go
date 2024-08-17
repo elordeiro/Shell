@@ -5,26 +5,34 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
 
 type Shell struct {
-	parInput string
-	status   int
+	path     []string
+	builtins []string
+	scanner  *bufio.Scanner
+	// status   int
 }
 
 func NewShell() *Shell {
-	return &Shell{}
+	shell := &Shell{scanner: bufio.NewScanner(os.Stdin)}
+
+	path := os.Getenv("PATH")
+	shell.path = append(shell.path, strings.Split(string(path), ":")...)
+	shell.builtins = append(shell.path, "echo", "exit", "type")
+
+	return shell
 }
 
 func (s *Shell) run() {
-	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Fprint(os.Stdout, "$ ")
 
-		scanner.Scan()
-		line := scanner.Text()
+		s.scanner.Scan()
+		line := s.scanner.Text()
 		lineSplit := strings.Split(strings.TrimSpace(line), " ")
 		cmd := lineSplit[0]
 
@@ -66,12 +74,25 @@ func (s *Shell) typeCmd(line string) {
 		return
 	}
 
-	if line == "echo" || line == "exit" || line == "type" {
+	if slices.Contains(s.builtins, line) {
 		fmt.Println(line, "is a shell builtin")
-	} else {
-		fmt.Printf("%s: not found\n", line)
+		return
 	}
 
+	var binPath string
+	if slices.ContainsFunc(s.path, func(path string) bool {
+		binPath = path + "/" + line
+		stat, err := os.Stat(binPath)
+		if err != nil {
+			return false
+		}
+		return !stat.IsDir()
+	}) {
+		fmt.Println(line, "is", binPath)
+		return
+	}
+
+	fmt.Printf("%s: not found\n", line)
 }
 
 func atoi(a string) int {
