@@ -36,10 +36,12 @@ func (s *Shell) run() {
 
 		s.scanner.Scan()
 		line := s.scanner.Text()
-		lineSplit := strings.Split(strings.TrimSpace(line), " ")
-		cmd := lineSplit[0]
+		splitLine := strings.Split(strings.TrimSpace(line), " ")
+		cmd := splitLine[0]
 
 		switch cmd {
+		case "cd":
+			s.cd(line)
 		case "echo":
 			s.echo(line)
 		case "exit":
@@ -50,12 +52,31 @@ func (s *Shell) run() {
 			s.typeCmd(line)
 		default:
 			if path, ok := s.cmdExists(cmd); ok {
-				s.call(path, lineSplit[1:])
+				s.call(path, splitLine[1:])
 			} else {
 				fmt.Printf("%s: command not found\n", cmd)
 			}
 		}
 	}
+}
+
+// ----------------------------------------------------------------------------
+// Commands
+// ----------------------------------------------------------------------------
+func (s *Shell) cd(line string) {
+	line = strings.TrimSpace(line)
+	if line == "cd" {
+		// implement cd home
+		// return
+	}
+
+	path := strings.TrimPrefix(line, "cd ")
+	stat, err := os.Stat(path)
+	if err != nil || !stat.IsDir() {
+		fmt.Printf("cd: %s: No such file or directory\n", path)
+		return
+	}
+	s.pwd = path
 }
 
 func (s *Shell) exit(line string) {
@@ -111,7 +132,11 @@ func (s *Shell) call(path string, args []string) {
 	}
 }
 
-// Helpers --------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
+// Helpers
+// ----------------------------------------------------------------------------
 func (s *Shell) cmdExists(cmd string) (path string, exists bool) {
 	if slices.ContainsFunc(s.path, func(p string) bool {
 		path = p + "/" + cmd
@@ -125,6 +150,8 @@ func (s *Shell) cmdExists(cmd string) (path string, exists bool) {
 	}
 	return "", false
 }
+
+// func pathExists()
 
 func atoi(a string) int {
 	i, err := strconv.Atoi(a)
