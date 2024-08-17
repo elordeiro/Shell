@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"slices"
 	"strconv"
 	"strings"
@@ -44,7 +45,11 @@ func (s *Shell) run() {
 		case "type":
 			s.typeCmd(line)
 		default:
-			fmt.Printf("%s: command not found\n", cmd)
+			if path, ok := s.cmdExists(cmd); ok {
+				s.call(path, lineSplit[1:])
+			} else {
+				fmt.Printf("%s: command not found\n", cmd)
+			}
 		}
 	}
 }
@@ -79,20 +84,38 @@ func (s *Shell) typeCmd(line string) {
 		return
 	}
 
-	var binPath string
-	if slices.ContainsFunc(s.path, func(path string) bool {
-		binPath = path + "/" + line
-		stat, err := os.Stat(binPath)
+	if path, ok := s.cmdExists(line); ok {
+		fmt.Println(line, "is", path)
+		return
+	}
+
+	fmt.Printf("%s: not found\n", line)
+}
+
+func (s *Shell) call(path string, args []string) {
+	cmd := exec.Command(path, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Helpers --------------------------------------------------------------------
+func (s *Shell) cmdExists(cmd string) (path string, exists bool) {
+	if slices.ContainsFunc(s.path, func(p string) bool {
+		path = p + "/" + cmd
+		stat, err := os.Stat(path)
 		if err != nil {
 			return false
 		}
 		return !stat.IsDir()
 	}) {
-		fmt.Println(line, "is", binPath)
-		return
+		return path, true
 	}
-
-	fmt.Printf("%s: not found\n", line)
+	return "", false
 }
 
 func atoi(a string) int {
@@ -102,3 +125,5 @@ func atoi(a string) int {
 	}
 	return i
 }
+
+// ----------------------------------------------------------------------------
