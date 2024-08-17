@@ -63,12 +63,12 @@ func (s *Shell) run() {
 // ----------------------------------------------------------------------------
 func (s *Shell) cd(path string) {
 	if path == "" || path == "~" {
-		s.pwd = "~"
+		s.pwd = os.Getenv("HOME")
 		return
 	}
 
 	// absolute path
-	if path[0] == '/' || path[0] != '.' {
+	if path[0] == '/' {
 		stat, err := os.Stat(path)
 		if err != nil || !stat.IsDir() {
 			fmt.Printf("cd: %s: No such file or directory\n", path)
